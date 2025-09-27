@@ -1,0 +1,6 @@
+C:\Users\furig\Downloads\devops\Sprint3-Mottu-.Net-API\MottuApi.Tests\obj\Debug\net9.0\MottuApi.Tests.csproj.AssemblyReference.cache
+C:\Users\furig\Downloads\devops\Sprint3-Mottu-.Net-API\MottuApi.Tests\obj\Debug\net9.0\MottuApi.Tests.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\furig\Downloads\devops\Sprint3-Mottu-.Net-API\MottuApi.Tests\obj\Debug\net9.0\MottuApi.Tests.AssemblyInfoInputs.cache
+C:\Users\furig\Downloads\devops\Sprint3-Mottu-.Net-API\MottuApi.Tests\obj\Debug\net9.0\MottuApi.Tests.AssemblyInfo.cs
+C:\Users\furig\Downloads\devops\Sprint3-Mottu-.Net-API\MottuApi.Tests\obj\Debug\net9.0\MottuApi.Tests.csproj.CoreCompileInputs.cache
+C:\Users\furig\Downloads\devops\Sprint3-Mottu-.Net-API\MottuApi.Tests\obj\Debug\net9.0\MottuApi.Tests.sourcelink.json

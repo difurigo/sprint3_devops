@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MottuApi", "MottuApi\MottuApi.csproj", "{B9B0568F-29B7-AEB5-6828-6C832379C49F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MottuApi.Tests", "MottuApi.Tests\MottuApi.Tests.csproj", "{2DC7D0C5-0930-04BC-DA91-6147EDEC16BF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B9B0568F-29B7-AEB5-6828-6C832379C49F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9B0568F-29B7-AEB5-6828-6C832379C49F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9B0568F-29B7-AEB5-6828-6C832379C49F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9B0568F-29B7-AEB5-6828-6C832379C49F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DC7D0C5-0930-04BC-DA91-6147EDEC16BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DC7D0C5-0930-04BC-DA91-6147EDEC16BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DC7D0C5-0930-04BC-DA91-6147EDEC16BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DC7D0C5-0930-04BC-DA91-6147EDEC16BF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BC9DBF6C-3231-4AF8-B1DD-7644C9313BF3}
+	EndGlobalSection
+EndGlobal

@@ -1,16 +1,33 @@
 using MottuApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using Oracle.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllers();
-builder.Services.AddDbContext<MottuDbContext>(options =>
-    options.UseOracle(builder.Configuration.GetConnectionString("DefaultConnection")));
+// ==========================
+// Controllers + JSON
+// ==========================
+// Ignora ciclos para evitar loop de serialização (relações bidirecionais no EF)
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// ==========================
+// DbContext (MySQL via Pomelo)
+// ==========================
+builder.Services.AddDbContext<MottuDbContext>(options =>
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
+    ));
+
+// ==========================
+// Swagger / OpenAPI
+// ==========================
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -29,14 +46,28 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// ==========================
+// Migrations automáticas
+// ==========================
+// Aplica migrations pendentes ao iniciar (útil no deploy em nuvem)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<MottuDbContext>();
+    await db.Database.MigrateAsync();
+}
+
+// ==========================
+// Pipeline HTTP
+// ==========================
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "API Mottu v1");
-    c.RoutePrefix = string.Empty; // Para acessar diretamente na raiz
+    c.RoutePrefix = string.Empty; // Swagger acessível na raiz
 });
 
+// Em dev, sem https configurado no launchSettings, este middleware pode dar aviso.
+// Em produção, mantenha para redirecionamento seguro.
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
