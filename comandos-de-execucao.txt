@@ -1,0 +1,161 @@
+🚀 0. Preparação
+
+Abra o PowerShell (ou outro terminal com Docker e Azure CLI) na pasta do projeto onde está o Dockerfile.
+
+
+🧹 1. Limpeza (caso precise regravar)
+
+az container delete -g mottu-rg -n mottu-api -y
+az container delete -g mottu-rg -n mottu-mysql -y
+az group delete --name mottu-rg --yes --no-wait
+
+
+🌐 2. Login no Azure e criação do Resource Group
+
+az login
+az group create --name mottu-rg --location brazilsouth
+
+
+📦 3. Azure Container Registry (ACR)
+
+Crie um registro de imagens (o nome deve ser único no mundo):
+
+az acr create --resource-group mottu-rg --name mottuacr01 --sku Basic --admin-enabled true
+
+Verifique o login server retornado (ex.: mottuacr01.azurecr.io).
+
+
+🐳 4. Build e Push da Imagem .NET API
+
+No diretório onde está o Dockerfile:
+
+docker build -t mottuapi:local .
+az acr login --name mottuacr01
+docker tag mottuapi:local mottuacr01.azurecr.io/mottuapi:1.0
+docker push mottuacr01.azurecr.io/mottuapi:1.0
+
+
+🗄️ 5. Banco de Dados MySQL no ACI
+
+Crie o container com MySQL 8.0:
+
+az container create `
+  --resource-group mottu-rg `
+  --name mottu-mysql `
+  --image mysql:8.0 `
+  --cpu 1 --memory 1 `
+  --os-type Linux `
+  --ports 3306 `
+  --environment-variables MYSQL_ROOT_PASSWORD="<SENHA>" MYSQL_DATABASE=motosdb `
+  --ip-address Public
+
+Pegue o IP público para uso no próximo passo:
+
+az container show -g mottu-rg -n mottu-mysql --query "ipAddress.ip" -o tsv
+
+Anote o IP, por exemplo: 00.000.000.00
+
+
+⚙️ 6. Deploy da API .NET no ACI
+
+az acr credential show --name mottuacr01
+
+Crie a instância da sua API, ajustando --dns-name-label para algo único no Azure:
+
+az container create `
+  --resource-group mottu-rg `
+  --name mottu-api `
+  --image mottuacr01.azurecr.io/mottuapi:1.0 `
+  --cpu 1 --memory 1.5 `
+  --os-type Linux `
+  --ports 8080 `
+  --dns-name-label mottuapi-<ID> `
+  --environment-variables `
+     ASPNETCORE_ENVIRONMENT=Production `
+     ASPNETCORE_URLS="http://+:8080" `
+     ConnectionStrings__DefaultConnection="server=<IP>;port=3306;database=motosdb;user=root;password=<SENHA>" `
+  --registry-login-server mottuacr01.azurecr.io `
+  --registry-username <USER_DO_ACR> `
+  --registry-password "<SENHA_DO_ACR>" `
+  --ip-address Public
+
+Verifique o FQDN:
+
+az container show -g mottu-rg -n mottu-api --query "ipAddress.fqdn" -o tsv
+
+Exemplo retornado: mottuapi-<ID>.brazilsouth.azurecontainer.io
+
+
+✅ 7. Testar a API
+
+Abra no navegador:
+
+http://mottuapi-<ID>.brazilsouth.azurecontainer.io:8080
+
+Use o Swagger para:
+
+Criar registros em Patios, Funcionarios e Gerentes.
+
+Testar listagem (GET), inclusão (POST), atualização (PUT) e exclusão (DELETE).
+
+
+1. Patio (pátio de motos)
+
+Criar (POST)
+
+{
+  "nome": "Pátio Centro",
+  "endereco": "Rua Principal 123, São Paulo",
+  "gerenteId": null
+}
+
+
+Atualizar (PUT)
+
+{
+  "id": 1,
+  "nome": "Pátio Centro Reformado",
+  "endereco": "Rua Principal 456, São Paulo",
+  "gerenteId": null
+}
+
+
+2. Funcionario (funcionário Mottu)
+
+Criar (POST)
+
+{
+  "nome": "João da Silva",
+  "email": "joao.silva@mottu.com",
+  "senha": "hash-ou-senha-simples",
+  "patioId": 1
+}
+
+Atualizar (PUT)
+
+{
+  "id": 1,
+  "nome": "João da Silva Junior",
+  "email": "joao.silva@mottu.com",
+  "senha": "hash-ou-senha-simples",
+  "patioId": 1
+}
+
+
+3. Gerente (gerencia de um pátio)
+
+Criar (POST)
+
+{
+  "funcionarioId": 1,
+  "patioId": 1
+}
+
+
+Atualizar (PUT)
+
+{
+  "id": 1,
+  "funcionarioId": 1,
+  "patioId": 1
+}
