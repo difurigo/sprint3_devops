@@ -1,7 +1,4 @@
-# API Mottu – Gestão de Pátios, Funcionários e Gerentes
-
-> **3ª Sprint – ADVANCED BUSINESS DEVELOPMENT WITH .NET**  
-> Projeto em ASP.NET Core Web API seguindo boas práticas REST (paginação, HATEOAS, status codes adequados) e documentação via Swagger/OpenAPI.
+# 📦 Mottu API – Deploy em Azure Container Instances (DevOps)
 
 ---
 
@@ -24,137 +21,191 @@ O domínio escolhido representa a **operação de pátios da Mottu**. Há relaç
 
 ---
 
-## 🏗️ Arquitetura e Tecnologias
-- **ASP.NET Core Web API** (.NET 9)  
-- **Entity Framework Core** (mapeamento ORM)  
-- **Banco**: *Oracle* (produção/aula) e opção de **banco em memória** no ambiente de desenvolvimento para facilitar testes locais (ver *Execução*).  
-- **Swagger/OpenAPI** para documentação
-- **Paginação** via `page` e `pageSize`
-- **HATEOAS**: respostas incluem links de navegação (coleções e recursos) para facilitar descoberta de rotas
-- **Camadas do projeto**
-  - `Controllers/` – entrada HTTP e contratos REST
-  - `Data/` – `DbContext`, mapeamentos e migrações
-  - `Models/` – entidades de domínio e DTOs
-  - `Migrations/` – versionamento de esquema (EF Core)
-
-> Justificativa: A separação por camadas simplifica manutenção e testes, enquanto EF Core acelera o desenvolvimento seguro com Oracle. Swagger garante **transparência dos contratos** e acelera QA.
+## 📝 Descrição do Projeto
+API .NET 9.0 para gestão de **Pátios**, **Funcionários** e **Gerentes** da Mottu.  
+O objetivo desta Sprint foi **containerizar** a aplicação e o banco de dados, e **provisionar toda a infraestrutura em nuvem (Azure)** de forma automatizada via CLI, aplicando práticas de **DevOps**.
 
 ---
 
-## ▶️ Execução (Dev e Produção)
+## ⚙️ Arquitetura
 
-### Pré‑requisitos
-- **Visual Studio 2022** (17.12+) ou **.NET 9 SDK** instalado
-- Acesso ao Oracle (se for usar DB real) ou executar em **modo Dev** com banco em memória
+- **API**: .NET 9.0 (C#) + Entity Framework Core + Swagger
+- **Banco de Dados**: MySQL 8.0 (rodando em container no Azure)
+- **Containerização**: Docker (multi-stage build)
+- **Provisionamento**: Azure CLI (Infrastructure as Code)
+- **Registry**: Azure Container Registry (ACR)
+- **Execução**: Azure Container Instances (ACI)  
+- **CI/CD**: Build local + Push para ACR + Deploy automático em containers
 
-### 1) Clonar e restaurar
+---
+
+## 🚀 Passo a Passo (Execução e Deploy)
+
+### 0️⃣ Pré-requisitos
+
+- Conta no [Azure](https://portal.azure.com/) com CLI configurado (`az --version`)
+- Docker instalado e em execução (`docker --version`)
+- Código fonte da API com Dockerfile
+
+---
+
+### 1️⃣ Limpeza (caso precise regravar)
+
+Para recriar tudo do zero:
+
 ```bash
-git clone <url-do-repo>
-cd sprint3-.Net/MottuApi
-dotnet restore
+az container delete -g mottu-rg -n mottu-api -y
+az container delete -g mottu-rg -n mottu-mysql -y
+az group delete --name mottu-rg --yes --no-wait
 ```
 
-### 2) Definir ambiente e banco
-**Modo rápido (DEV – sem Oracle):**
-- O projeto está configurado para rodar com banco **InMemory** quando `ASPNETCORE_ENVIRONMENT=Development`.  
-- Nesse modo você já consegue abrir o Swagger e exercitar os endpoints.
+---
 
-**Modo com Oracle (produção/aula):**
-1. Ajuste a connection string `DefaultConnection` no `appsettings.json`.
-2. Aplique as migrações:
-   ```bash
-   dotnet tool install --global dotnet-ef   # se ainda não tiver
-   dotnet ef database update
-   ```
+### 2️⃣ Login no Azure e criação do Resource Group
 
-### 3) Rodar
 ```bash
-dotnet run
+az login
+az group create --name mottu-rg --location brazilsouth
 ```
-- Logs mostram algo como: `Now listening on: http://localhost:5008`
-- **Swagger UI**: por padrão está na **raiz** → **http://localhost:5008/**
-  - Se preferir em `/swagger`, altere `Program.cs` para `c.RoutePrefix = "swagger";` e acesse `http://localhost:5008/swagger`.
-- HTTPS opcional: habilite no `launchSettings.json` (`applicationUrl` com http **e** https).
 
 ---
 
-## 📘 Swagger / OpenAPI
-- **Descrição de endpoints** e **parâmetros** com anotações
-- **Exemplos de payload** incluídos
-- **Modelos de dados** descritos
-- Acesse a documentação interativa em **http://localhost:5008/** (ou `/swagger` se configurado)
+### 3️⃣ Criar o Azure Container Registry (ACR)
+
+Crie um repositório privado de imagens Docker no Azure (nome global único):
+
+```bash
+az acr create --resource-group mottu-rg --name mottuacr01 --sku Basic --admin-enabled true
+```
+
+O comando retorna o `loginServer`, por exemplo:
+
+```
+"loginServer": "mottuacr01.azurecr.io"
+```
 
 ---
 
-## 🔗 Endpoints (CRUD + Paginação + HATEOAS)
+### 4️⃣ Build e Push da Imagem da API
 
-> **Paginação**: use `?page=1&pageSize=10`.  
-> **HATEOAS**: as respostas incluem `links` com `rel`, `href` e `method` (exemplos abaixo).  
-> **Status codes**: `200 OK`, `201 Created`, `204 No Content`, `400 Bad Request`, `404 Not Found`, `409 Conflict` (quando aplicável).
+No diretório do projeto onde está o Dockerfile:
 
-### Pátios
-- `GET /api/patios` – lista (paginação)
-- `GET /api/patios/{id}` – detalhe
-- `POST /api/patios` – cria
-- `PUT /api/patios/{id}` – atualiza
-- `DELETE /api/patios/{id}` – exclui
-
-**Exemplo – criação**
-```http
-POST /api/patios
-Content-Type: application/json
-
-{
-  "nome": "Pátio Central",
-  "endereco": "Rua Principal, 123"
-}
+```bash
+docker build -t mottuapi:local .
+az acr login --name mottuacr01
+docker tag mottuapi:local mottuacr01.azurecr.io/mottuapi:1.0
+docker push mottuacr01.azurecr.io/mottuapi:1.0
 ```
-**Resposta 201**
+
+Isso gera a imagem da API e envia para o ACR.
+
+---
+
+### 5️⃣ Subir o Banco MySQL em um Container no Azure
+
+Crie um container MySQL 8.0:
+
+```bash
+az container create \
+  --resource-group mottu-rg \
+  --name mottu-mysql \
+  --image mysql:8.0 \
+  --cpu 1 --memory 1 \
+  --os-type Linux \
+  --ports 3306 \
+  --environment-variables MYSQL_ROOT_PASSWORD="SENHA" MYSQL_DATABASE=motosdb \
+  --ip-address Public
+```
+
+Pegue o IP público:
+
+```bash
+az container show -g mottu-rg -n mottu-mysql --query "ipAddress.ip" -o tsv
+```
+
+Guarde o IP (ex.: `0.000.00.000`) para a conexão da API.
+
+---
+
+### 6️⃣ Deploy da API no Azure Container Instances (ACI)
+
+Recupere as credenciais do ACR:
+
+```bash
+az acr credential show --name mottuacr01
+```
+
+Crie o container da API com um nome DNS único:
+
+```bash
+az container create \
+  --resource-group mottu-rg \
+  --name mottu-api \
+  --image mottuacr01.azurecr.io/mottuapi:1.0 \
+  --cpu 1 --memory 1.5 \
+  --os-type Linux \
+  --ports 8080 \
+  --dns-name-label mottuapi-IDENTIFICADOR_UNICO \
+  --environment-variables \
+     ASPNETCORE_ENVIRONMENT=Production \
+     ASPNETCORE_URLS="http://+:8080" \
+     ConnectionStrings__DefaultConnection="server=<IP_MYSQL>;port=3306;database=motosdb;user=root;password=SENHA" \
+  --registry-login-server mottuacr01.azurecr.io \
+  --registry-username <USER_ACR> \
+  --registry-password "<SENHA_ACR>" \
+  --ip-address Public
+```
+
+Verifique o FQDN gerado:
+
+```bash
+az container show -g mottu-rg -n mottu-api --query "ipAddress.fqdn" -o tsv
+```
+
+Exemplo:
+
+```
+mottuapi-IDENTIFICADOR_UNICO.brazilsouth.azurecontainer.io
+```
+
+---
+
+### 7️⃣ Testar a API
+
+Abra no navegador:
+
+```
+http://mottuapi-IDENTIFICADOR_UNICO.brazilsouth.azurecontainer.io:8080
+```
+
+A interface do Swagger permite:
+
+- Criar/atualizar/excluir/listar **Pátios**, **Funcionários** e **Gerentes**  
+- Testar endpoints `GET`, `POST`, `PUT` e `DELETE`
+
+Exemplos de requisições JSON:
+
+**Criar Pátio**
 ```json
 {
-  "id": 1,
-  "nome": "Pátio Central",
-  "endereco": "Rua Principal, 123",
-  "links": [
-    {"rel":"self","href":"/api/patios/1","method":"GET"},
-    {"rel":"update","href":"/api/patios/1","method":"PUT"},
-    {"rel":"delete","href":"/api/patios/1","method":"DELETE"}
-  ]
+  "nome": "Pátio Centro",
+  "endereco": "Rua Principal 123, São Paulo",
+  "gerenteId": null
 }
 ```
 
-### Funcionários
-- `GET /api/funcionarios`
-- `GET /api/funcionarios/{id}`
-- `POST /api/funcionarios`
-- `PUT /api/funcionarios/{id}`
-- `DELETE /api/funcionarios/{id}`
-
-**Exemplo – criação**
-```http
-POST /api/funcionarios
-Content-Type: application/json
-
+**Criar Funcionário**
+```json
 {
-  "nome": "João Silva",
-  "email": "joao@mottu.com",
-  "senha": "Senha@123",
+  "nome": "João da Silva",
+  "email": "joao.silva@mottu.com",
+  "senha": "senha123",
   "patioId": 1
 }
 ```
 
-### Gerentes
-- `GET /api/gerentes`
-- `GET /api/gerentes/{id}`
-- `POST /api/gerentes`
-- `PUT /api/gerentes/{id}`
-- `DELETE /api/gerentes/{id}`
-
-**Exemplo – criação**
-```http
-POST /api/gerentes
-Content-Type: application/json
-
+**Criar Gerente**
+```json
 {
   "funcionarioId": 1,
   "patioId": 1
@@ -163,30 +214,5 @@ Content-Type: application/json
 
 ---
 
-## 🧪 Testes
-Execute todos os testes do repositório:
-```bash
-dotnet test
-```
-
----
-
-## ✅ Checklist vs. Requisitos do Professor
-
-- [x] **3 entidades** principais (Pátio, Funcionário, Gerente) **com justificativa** de domínio
-- [x] **CRUD** completo para as 3 entidades
-- [x] **Boas práticas REST**: recursos, verbos, status codes e validações
-- [x] **Paginação** (`page`, `pageSize`) em coleções
-- [x] **HATEOAS** para navegação entre recursos
-- [x] **Swagger/OpenAPI** com descrição, parâmetros, exemplos e modelos
-- [x] **Repositório GitHub público** com **README** claro
-- [x] **Comando para rodar testes** (`dotnet test`)
-
-> **Penalidades que este README ajuda a evitar**  
-> -20 pts — falta de documentação Swagger • -100 pts — projeto não compila • -20 pts — sem README
-
----
-
 ## 📄 Licença
 Uso acadêmico. Ajuste conforme a política da disciplina.
-
