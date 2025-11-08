@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\furig\\Downloads\\devops\\Sprint3-Mottu-.Net-API\\MottuApi\\MottuApi.csproj": {}
+    "C:\\Users\\furig\\Downloads\\teste\\sprint3_devops\\MottuApi\\MottuApi.csproj": {}
   },
   "projects": {
-    "C:\\Users\\furig\\Downloads\\devops\\Sprint3-Mottu-.Net-API\\MottuApi\\MottuApi.csproj": {
+    "C:\\Users\\furig\\Downloads\\teste\\sprint3_devops\\MottuApi\\MottuApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\furig\\Downloads\\devops\\Sprint3-Mottu-.Net-API\\MottuApi\\MottuApi.csproj",
+        "projectUniqueName": "C:\\Users\\furig\\Downloads\\teste\\sprint3_devops\\MottuApi\\MottuApi.csproj",
         "projectName": "MottuApi",
-        "projectPath": "C:\\Users\\furig\\Downloads\\devops\\Sprint3-Mottu-.Net-API\\MottuApi\\MottuApi.csproj",
+        "projectPath": "C:\\Users\\furig\\Downloads\\teste\\sprint3_devops\\MottuApi\\MottuApi.csproj",
         "packagesPath": "C:\\Users\\furig\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\furig\\Downloads\\devops\\Sprint3-Mottu-.Net-API\\MottuApi\\obj\\",
+        "outputPath": "C:\\Users\\furig\\Downloads\\teste\\sprint3_devops\\MottuApi\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\furig\\AppData\\Roaming\\NuGet\\NuGet.Config"
